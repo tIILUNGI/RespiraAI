@@ -1,42 +1,41 @@
-# RespiraAI — Assistente GenAI para fumaça no inverno e poluição urbana
+# RespiraAI — Clean Air GenAI Copilot
 
-Aplicação web em React + TypeScript + Vite que ajuda famílias e comunidades a navegar por episódios de **fumaça intensa no inverno** e **poluição do ar urbana**.
+**Live demo:** https://respira-ai-pi.vercel.app/  
+**Repository:** https://github.com/tIILUNGI/RespiraAI
 
-## Funcionalidades
+RespiraAI is a bilingual (English primary, Portuguese secondary) GenAI-powered web app that helps families and communities navigate **intense winter smoke** and **urban air pollution**.
 
-- **Assistente GenAI conversacional**: chat com contexto de localização, qualidade do ar e perfil do usuário.
-  - Modo **provedor compatível com OpenAI** (configurável na UI: Base URL, modelo e chave de API armazenada localmente no navegador).
-  - **Modo especialista local (fallback)**: gera respostas personalizadas com base em dados e regras quando não há API configurada/disponível.
-- **Dados de qualidade do ar em tempo quase real**: busca por cidade (geocoding Open-Meteo) ou geolocalização do navegador e consulta à [Open-Meteo Air Quality API](https://open-meteo.com/en/docs/air-quality-api) (PM2.5, PM10, AQI EUA, etc.).
-- **Perfil adaptado**: agregado familiar, crianças/idosos/condições sensíveis, aquecimento, cocção, transporte e rotina externa.
-- **Rotinas diárias de baixa emissão**: sugestões ajustadas ao nível de poluição e ao estilo de vida.
-- **Qualidade do ar interno**: vedação, ventilação estratégica, filtragem e redução de fontes internas para cenários de fumaça.
-- **Alternativas sustentáveis**: aquecimento/cozinha eficientes, mobilidade e energia com menor emissão.
-- **Impacto direto explicado**: cada recomendação inclui o efeito esperado na exposição à poluição, saúde, emissões e comunidade.
+## What it does
+- **Landing page** presenting the system and how it works (EN/PT).
+- **Location-aware, near real-time air quality:** city search/geolocation + [Open-Meteo Air Quality API](https://open-meteo.com/en/docs/air-quality-api) (US AQI, PM2.5, PM10, etc.).
+- **Personalized by household & lifestyle:** household composition, sensitivities, heating, cooking, transport, and outdoor routine.
+- **Low-emission daily routines** adapted to current conditions and profile.
+- **Indoor air quality guidance** for smoke/pollution episodes (sealing, ventilation timing, filtration, source control).
+- **Sustainable alternatives** tailored to context.
+- **Direct impact explained:** every recommendation clarifies effects on exposure/health, emissions, cost, and community.
+- **GenAI assistant (chat):**
+  - Configurable **OpenAI-compatible provider** (Base URL, model, API key stored locally in browser) via `src/lib/ai.ts`.
+  - **Local expert fallback mode** (no external API) that generates personalized, context-grounded guidance when no provider is configured or the connection fails.
 
-## Como executar
-
+## Run locally
 ```bash
 npm install
 npm run dev
 ```
 
-Build de produção:
-
+Production build:
 ```bash
 npm run build
 npm run preview
 ```
 
-## Configuração GenAI
+## GenAI configuration
+In **AI Settings / Config. IA** provide:
+- **Base URL** (e.g. `https://api.openai.com/v1` or a compatible endpoint)
+- **Model** (e.g. `gpt-4o-mini`)
+- **API key**
 
-No painel "Configuração do motor GenAI" informe:
-- **Base URL** (ex.: `https://api.openai.com/v1` ou endpoint compatível)
-- **Modelo** (ex.: `gpt-4o-mini`)
-- **Chave de API**
+> Note: direct browser calls to some providers may be blocked by CORS. For production use, a secure proxy/backend is recommended. The app includes a friendly local fallback mode for continuous operation.
 
-> Observação: chamadas diretas do navegador a alguns provedores podem ser bloqueadas por CORS. Para produção, recomenda-se usar um proxy/backend que injete a chave com segurança.
-
-## Aviso
-
-Informações educativas; não substituem orientação médica, alertas oficiais ou planos clínicos individuais. Em sintomas graves (falta de ar, dor no peito, piora rápida), procure atendimento de urgência.
+## Disclaimer
+Educational guidance only; not a substitute for medical advice, official alerts, or clinical plans. Seek urgent care for severe symptoms (shortness of breath, chest pain, rapid worsening).
