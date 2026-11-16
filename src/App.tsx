@@ -52,6 +52,7 @@ function renderRich(content: string) {
 
 export default function App() {
   const [lang, setLang] = useState<Lang>(() => loadJson('respira.lang', 'en'));
+  const [entered, setEntered] = useState<boolean>(() => loadJson('respira.entered', false));
   const [tab, setTab] = useState<'recs' | 'impact' | 'settings'>('recs');
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<LocationInfo[]>([]);
@@ -66,6 +67,7 @@ export default function App() {
   const [chatLoading, setChatLoading] = useState(false);
 
   useEffect(() => { localStorage.setItem('respira.lang', JSON.stringify(lang)); }, [lang]);
+  useEffect(() => { localStorage.setItem('respira.entered', JSON.stringify(entered)); }, [entered]);
   useEffect(() => { localStorage.setItem('respira.lifestyle', JSON.stringify(lifestyle)); }, [lifestyle]);
   useEffect(() => { localStorage.setItem('respira.ai', JSON.stringify(aiSettings)); }, [aiSettings]);
   useEffect(() => { localStorage.setItem('respira.location', JSON.stringify(location)); }, [location]);
@@ -117,6 +119,69 @@ export default function App() {
   }
 
   const L = (k: Parameters<typeof t>[1]) => t(lang, k);
+
+  if (!entered) {
+    const features = [
+      { title: L('feat1Title'), desc: L('feat1Desc'), icon: '◉' },
+      { title: L('feat2Title'), desc: L('feat2Desc'), icon: '↻' },
+      { title: L('feat3Title'), desc: L('feat3Desc'), icon: '⌂' },
+      { title: L('feat4Title'), desc: L('feat4Desc'), icon: '✦' },
+    ];
+    const steps = [L('step1'), L('step2'), L('step3')];
+    return (
+      <div className="landing">
+        <div className="landing-bg" />
+        <header className="landing-nav">
+          <div className="brand">
+            <div className="logo" />
+            <div className="brand-text"><h1>{L('appName')}</h1><p>{L('tagline')}</p></div>
+          </div>
+          <div className="pill-row">
+            <div className="lang-toggle" aria-label={L('lang')}>
+              <button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button>
+              <button className={lang==='pt'?'active':''} onClick={()=>setLang('pt')}>PT</button>
+            </div>
+          </div>
+        </header>
+        <main className="landing-main">
+          <section className="landing-hero">
+            <div className="landing-badge">{L('landingBadge')}</div>
+            <h1 className="landing-title">{L('landingTitle')}</h1>
+            <p className="landing-subtitle">{L('landingSubtitle')}</p>
+            <div className="landing-actions">
+              <button className="btn btn-lg" onClick={() => setEntered(true)}>{L('landingCta')}</button>
+              <a className="btn secondary btn-lg" href="#how">{L('landingSecondary')}</a>
+            </div>
+          </section>
+          <section className="landing-features">
+            {features.map((f, i) => (
+              <div key={i} className="feature-card">
+                <div className="feature-icon">{f.icon}</div>
+                <h3>{f.title}</h3>
+                <p>{f.desc}</p>
+              </div>
+            ))}
+          </section>
+          <section id="how" className="landing-how">
+            <h2>{L('landingHow')}</h2>
+            <div className="steps">
+              {steps.map((s, i) => (
+                <div key={i} className="step-card">
+                  <div className="step-num">{i + 1}</div>
+                  <p>{s}</p>
+                </div>
+              ))}
+            </div>
+            <div className="landing-note">{L('landingNote')}</div>
+            <div style={{ marginTop: 18 }}>
+              <button className="btn btn-lg" onClick={() => setEntered(true)}>{L('landingCta')}</button>
+            </div>
+          </section>
+        </main>
+      </div>
+    );
+  }
+
   const quick = [
     { label: L('quickToday'), prompt: L('planIntro') },
     { label: L('quickIndoor'), prompt: L('indoorPrompt') },
@@ -205,6 +270,7 @@ export default function App() {
             <div className="title">{L('appName')} <span>· {location ? location.name : L('tagline')}</span></div>
           </div>
           <div className="pill-row">
+            <button className="btn small secondary" onClick={() => setEntered(false)}>{lang === 'pt' ? 'Início' : 'Home'}</button>
             <div className="lang-toggle" aria-label={L('lang')}>
               <button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button>
               <button className={lang==='pt'?'active':''} onClick={()=>setLang('pt')}>PT</button>
