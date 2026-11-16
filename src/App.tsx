@@ -2,36 +2,29 @@ import { useEffect, useMemo, useState } from 'react';
 import './App.css';
 import { aqiCategory, fetchAirQuality, geocodeLocation } from './lib/air';
 import { buildContext, defaultAiSettings, generateAssistantReply } from './lib/ai';
+import { t, type Lang } from './lib/i18n';
 import { buildRecommendations, impactSummary } from './lib/recommendations';
 import type { AiSettings, AirQuality, ChatMessage, Lifestyle, LocationInfo } from './types';
 
 const defaultLifestyle: Lifestyle = {
-  household: '3-4 pessoas',
+  household: '3-4 people',
   hasChildren: false,
   hasElderly: false,
   hasRespiratory: false,
-  heating: 'elétrico / ar-condicionado',
-  cooking: 'gás',
-  transport: 'misto (carro e transporte público)',
-  outdoorRoutine: 'moderada (caminhadas/recados)',
+  heating: 'electric / heat pump',
+  cooking: 'gas',
+  transport: 'mixed (car & public transit)',
+  outdoorRoutine: 'moderate (walks/errands)',
   pets: false,
   notes: '',
 };
 
-function uid() {
-  return Math.random().toString(36).slice(2) + Date.now().toString(36);
-}
-
-function loadJson<T>(key: string, fallback: T): T {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as T) : fallback;
-  } catch {
-    return fallback;
-  }
-}
+const uid = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
+function loadJson<T>(key: string, fallback: T): T { try { const r = localStorage.getItem(key); return r ? JSON.parse(r) as T : fallback; } catch { return fallback; } }
 
 export default function App() {
+  const [lang, setLang] = useState<Lang>(() => loadJson('respira.lang', 'en'));
+  const [tab, setTab] = useState<'recs' | 'impact' | 'settings'>('recs');
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<LocationInfo[]>([]);
   const [location, setLocation] = useState<LocationInfo | null>(() => loadJson('respira.location', null));
@@ -40,301 +33,245 @@ export default function App() {
   const [airError, setAirError] = useState('');
   const [lifestyle, setLifestyle] = useState<Lifestyle>(() => loadJson('respira.lifestyle', defaultLifestyle));
   const [aiSettings, setAiSettings] = useState<AiSettings>(() => loadJson('respira.ai', defaultAiSettings()));
-  const [messages, setMessages] = useState<ChatMessage[]>(() => [
-    {
-      id: uid(),
-      role: 'assistant',
-      content:
-        'Olá! Sou o **RespiraAI**, seu assistente para enfrentar fumaça no inverno e poluição urbana. Informe sua localização e perfil, e eu monto rotinas de baixa emissão, dicas para o ar interno e alternativas sustentáveis explicando o impacto direto de cada escolha. Como posso ajudar hoje?',
-      meta: 'Assistente',
-    },
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => [{ id: uid(), role: 'assistant', content: t(loadJson('respira.lang', 'en'), 'welcome'), meta: 'RespiraAI' }]);
   const [input, setInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
 
+  useEffect(() => { localStorage.setItem('respira.lang', JSON.stringify(lang)); }, [lang]);
   useEffect(() => { localStorage.setItem('respira.lifestyle', JSON.stringify(lifestyle)); }, [lifestyle]);
   useEffect(() => { localStorage.setItem('respira.ai', JSON.stringify(aiSettings)); }, [aiSettings]);
   useEffect(() => { localStorage.setItem('respira.location', JSON.stringify(location)); }, [location]);
 
+  // refresh welcome when language changes and conversation is fresh
   useEffect(() => {
-    if (location) void loadAir(location);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location?.latitude, location?.longitude]);
+    setMessages((m) => {
+      if (m.length === 1 && m[0].role === 'assistant') return [{ ...m[0], content: t(lang, 'welcome') }];
+      return m;
+    });
+  }, [lang]);
 
-  async function loadAir(loc: LocationInfo) {
+  useEffect(() => { if (location) void loadAir(location, lang); /* eslint-disable-next-line */ }, [location?.latitude, location?.longitude]);
+
+  async function loadAir(loc: LocationInfo, l: Lang = lang) {
     setAirLoading(true); setAirError('');
-    try {
-      const data = await fetchAirQuality(loc.latitude, loc.longitude);
-      setAir(data);
-    } catch (e: any) {
-      setAirError(e?.message || 'Erro ao carregar dados de ar.');
-    } finally {
-      setAirLoading(false);
-    }
+    try { setAir(await fetchAirQuality(loc.latitude, loc.longitude, l)); }
+    catch (e: any) { setAirError(e?.message || (l === 'pt' ? 'Erro ao carregar dados de ar.' : 'Failed to load air data.')); }
+    finally { setAirLoading(false); }
   }
-
   async function search() {
     if (!query.trim()) return;
-    try {
-      const r = await geocodeLocation(query.trim());
-      setResults(r);
-    } catch (e: any) {
-      setAirError(e?.message || 'Erro na busca.');
-    }
+    try { setResults(await geocodeLocation(query.trim(), lang)); }
+    catch (e: any) { setAirError(e?.message || 'Error'); }
   }
-
   function useMyLocation() {
-    if (!navigator.geolocation) { setAirError('Geolocalização não suportada neste navegador.'); return; }
+    if (!navigator.geolocation) { setAirError(lang === 'pt' ? 'Geolocalização não suportada.' : 'Geolocation not supported.'); return; }
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setLocation({
-          name: 'Minha localização',
-          latitude: pos.coords.latitude,
-          longitude: pos.coords.longitude,
-        });
-        setResults([]);
-      },
-      () => setAirError('Não foi possível obter sua localização. Busque manualmente pela cidade.'),
-      { enableHighAccuracy: true, timeout: 10000 },
+      (pos) => { setLocation({ name: lang === 'pt' ? 'Minha localização' : 'My location', latitude: pos.coords.latitude, longitude: pos.coords.longitude }); setResults([]); },
+      () => setAirError(lang === 'pt' ? 'Não foi possível obter sua localização.' : 'Could not get your location.'),
+      { enableHighAccuracy: true, timeout: 10000 }
     );
   }
 
-  const cat = useMemo(() => aqiCategory(air?.usAqi), [air?.usAqi]);
-  const recs = useMemo(() => buildRecommendations(air, lifestyle), [air, lifestyle]);
-  const impacts = useMemo(() => impactSummary(air, lifestyle), [air, lifestyle]);
+  const cat = useMemo(() => aqiCategory(air?.usAqi, lang), [air?.usAqi, lang]);
+  const recs = useMemo(() => buildRecommendations(air, lifestyle, lang), [air, lifestyle, lang]);
+  const impacts = useMemo(() => impactSummary(air, lifestyle, lang), [air, lifestyle, lang]);
 
   async function sendMessage(text?: string) {
     const content = (text ?? input).trim();
     if (!content || chatLoading) return;
     const userMsg: ChatMessage = { id: uid(), role: 'user', content };
     const next = [...messages, userMsg];
-    setMessages(next);
-    setInput('');
-    setChatLoading(true);
+    setMessages(next); setInput(''); setChatLoading(true);
     try {
-      const reply = await generateAssistantReply({ messages: next, settings: aiSettings, location, air, lifestyle });
-      setMessages((m) => [...m, { id: uid(), role: 'assistant', content: reply, meta: aiSettings.apiKey ? `${aiSettings.model}` : 'Modo especialista local' }]);
-    } finally {
-      setChatLoading(false);
-    }
+      const reply = await generateAssistantReply({ messages: next, settings: aiSettings, location, air, lifestyle, lang });
+      setMessages((m) => [...m, { id: uid(), role: 'assistant', content: reply, meta: aiSettings.apiKey ? aiSettings.model : (lang === 'pt' ? 'Modo especialista local' : 'Local expert mode') }]);
+    } finally { setChatLoading(false); }
   }
 
-  function quickPrompt(p: string) { void sendMessage(p); }
+  const L = (k: Parameters<typeof t>[1]) => t(lang, k);
+  const quick = [
+    { label: L('quickToday'), prompt: L('planIntro') },
+    { label: L('quickIndoor'), prompt: L('indoorPrompt') },
+    { label: L('quickLow'), prompt: L('lowPrompt') },
+    { label: L('quickCommunity'), prompt: L('communityPrompt') },
+  ];
 
-  const planPrompt = `Monte um plano prático para hoje para minha família considerando a qualidade do ar atual, com rotinas de baixa emissão, cuidados com ar interno e alternativas sustentáveis, explicando o impacto direto de cada escolha.`;
+  const householdOpts = lang === 'pt' ? ['1-2 pessoas', '3-4 pessoas', '5+ pessoas', 'Comunidade / coletivo'] : ['1-2 people', '3-4 people', '5+ people', 'Community / group'];
+  const heatingOpts = lang === 'pt' ? ['elétrico / bomba de calor', 'gás', 'lenha / lareira', 'carvão', 'aquecedor a combustível', 'não sei / misto'] : ['electric / heat pump', 'gas', 'wood / fireplace', 'coal', 'fuel heater', 'unknown / mixed'];
+  const cookingOpts = lang === 'pt' ? ['gás', 'elétrico / indução', 'lenha / carvão', 'misto'] : ['gas', 'electric / induction', 'wood / charcoal', 'mixed'];
+  const transportOpts = lang === 'pt' ? ['misto (carro e transporte público)', 'carro/moto', 'transporte público', 'a pé / bicicleta', 'remoto / pouco deslocamento'] : ['mixed (car & public transit)', 'car/motorbike', 'public transit', 'walk / bike', 'remote / minimal travel'];
+  const outdoorOpts = lang === 'pt' ? ['baixa', 'moderada (caminhadas/recados)', 'alta (trabalho externo/esporte)'] : ['low', 'moderate (walks/errands)', 'high (outdoor work/sport)'];
 
   return (
-    <div className="app">
-      <header className="hero-header">
-        <div className="hero-copy">
-          <h1>RespiraAI</h1>
-          <p>
-            Assistente movido a GenAI para ajudar famílias e comunidades a navegar por <strong>fumaça intensa no inverno</strong> e <strong>poluição do ar urbana</strong>.
-            Sugere rotinas diárias de baixa emissão, cuidados com a qualidade do ar interno e alternativas sustentáveis adaptadas à sua localização e estilo de vida — sempre explicando o impacto direto das suas escolhas.
-          </p>
-          <div className="badge-row">
-            <span className="badge">GenAI conversacional</span>
-            <span className="badge">Dados de ar em tempo quase real</span>
-            <span className="badge">Planos personalizados</span>
-            <span className="badge">Foco em saúde e comunidade</span>
+    <div className="shell">
+      <aside className="sidebar">
+        <div className="brand">
+          <div className="brand-mark" />
+          <div>
+            <h1>{L('appName')}</h1>
+            <p>{L('tagline')}</p>
           </div>
         </div>
-        <div className="hero-status">
-          <div className="muted">Qualidade do ar {location ? `— ${location.name}` : ''}</div>
-          <div className="aqi-big" style={{ color: cat.color }}>{air?.usAqi != null ? Math.round(air.usAqi) : '—'}</div>
-          <div className="aqi-label" style={{ color: cat.color }}>{cat.label}</div>
-          <div className="muted" style={{ marginTop: 6 }}>{cat.advice}</div>
+
+        <div className="side-card">
+          <h3>{L('airQuality')}</h3>
+          <div className="aqi-hero">
+            <div className="aqi-num" style={{ color: cat.color }}>{air?.usAqi != null ? Math.round(air.usAqi) : '—'}</div>
+            <div className="aqi-meta">
+              <div className="label" style={{ color: cat.color }}>{cat.label}</div>
+              <div className="advice">{cat.advice}</div>
+            </div>
+          </div>
           <div className="kpi-grid">
-            <div className="kpi"><div className="v">{air?.pm25 != null ? air.pm25.toFixed(1) : '—'}</div><div className="l">PM2.5 (µg/m³)</div></div>
-            <div className="kpi"><div className="v">{air?.pm10 != null ? air.pm10.toFixed(1) : '—'}</div><div className="l">PM10 (µg/m³)</div></div>
-            <div className="kpi"><div className="v">{air?.time ? air.time.replace('T', ' ').slice(11, 16) : '—'}</div><div className="l">Atualização</div></div>
+            <div className="kpi"><div className="v">{air?.pm25 != null ? air.pm25.toFixed(1) : '—'}</div><div className="l">PM2.5 µg/m³</div></div>
+            <div className="kpi"><div className="v">{air?.pm10 != null ? air.pm10.toFixed(1) : '—'}</div><div className="l">PM10 µg/m³</div></div>
+            <div className="kpi"><div className="v">{air?.time ? air.time.replace('T',' ').slice(11,16) : '—'}</div><div className="l">{L('updated')}</div></div>
           </div>
-          <div className="small" style={{ marginTop: 10 }}>Fonte: {air?.source || 'Open-Meteo Air Quality API (ao informar localização)'}</div>
-        </div>
-      </header>
-
-      {airError && <div className="alert" style={{ marginBottom: 16 }}>{airError}</div>}
-
-      <div className="grid">
-        <div className="stack">
-          <section className="card">
-            <h2>Localização e contexto</h2>
-            <p className="lead">Informe sua cidade ou use a geolocalização para adaptar alertas e recomendações.</p>
-            <div className="row" style={{ marginBottom: 10 }}>
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Ex.: São Paulo, Porto Alegre, Santiago, Ciudad de México..."
-                onKeyDown={(e) => e.key === 'Enter' && void search()}
-                style={{ flex: 1, padding: '10px 12px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(4,14,24,0.6)', color: 'var(--text)' }}
-              />
-              <button className="btn" onClick={() => void search()}>Buscar</button>
-              <button className="btn secondary" onClick={useMyLocation}>Usar minha localização</button>
-            </div>
-            {results.length > 0 && (
-              <div className="chips" style={{ marginBottom: 10 }}>
-                {results.map((r, i) => (
-                  <button key={i} className="chip" onClick={() => { setLocation(r); setResults([]); }}>
-                    {r.name}
-                  </button>
-                ))}
-              </div>
-            )}
-            <div className="row">
-              <button className="btn ghost" onClick={() => location && void loadAir(location)} disabled={!location || airLoading}>
-                {airLoading ? 'Atualizando...' : 'Atualizar qualidade do ar'}
-              </button>
-              {location && <span className="small">Selecionado: {location.name} ({location.latitude.toFixed(2)}, {location.longitude.toFixed(2)})</span>}
-            </div>
-          </section>
-
-          <section className="card">
-            <h2>Perfil da família e estilo de vida</h2>
-            <p className="lead">Personalize rotinas e alternativas conforme sua realidade.</p>
-            <div className="form-grid">
-              <div className="field">
-                <label>Agregado familiar</label>
-                <select value={lifestyle.household} onChange={(e) => setLifestyle({ ...lifestyle, household: e.target.value })}>
-                  <option>1-2 pessoas</option><option>3-4 pessoas</option><option>5+ pessoas</option><option>Comunidade / coletivo</option>
-                </select>
-              </div>
-              <div className="field">
-                <label>Aquecimento no inverno</label>
-                <select value={lifestyle.heating} onChange={(e) => setLifestyle({ ...lifestyle, heating: e.target.value })}>
-                  <option>elétrico / ar-condicionado</option><option>gás</option><option>lenha / lareira</option><option>carvão</option><option>aquecedor a combustível</option><option>não sei / misto</option>
-                </select>
-              </div>
-              <div className="field">
-                <label>Cocção principal</label>
-                <select value={lifestyle.cooking} onChange={(e) => setLifestyle({ ...lifestyle, cooking: e.target.value })}>
-                  <option>gás</option><option>elétrico / indução</option><option>lenha / carvão</option><option>misto</option>
-                </select>
-              </div>
-              <div className="field">
-                <label>Transporte mais usado</label>
-                <select value={lifestyle.transport} onChange={(e) => setLifestyle({ ...lifestyle, transport: e.target.value })}>
-                  <option>misto (carro e transporte público)</option><option>carro/moto</option><option>transporte público</option><option>a pé / bicicleta</option><option>trabalho remoto / pouco deslocamento</option>
-                </select>
-              </div>
-              <div className="field">
-                <label>Rotina ao ar livre</label>
-                <select value={lifestyle.outdoorRoutine} onChange={(e) => setLifestyle({ ...lifestyle, outdoorRoutine: e.target.value })}>
-                  <option>baixa</option><option>moderada (caminhadas/recados)</option><option>alta (trabalho externo/esporte)</option>
-                </select>
-              </div>
-              <div className="field">
-                <label>Notas (alergias, horários, limitações)</label>
-                <input value={lifestyle.notes} onChange={(e) => setLifestyle({ ...lifestyle, notes: e.target.value })} placeholder="Ex.: asma leve, trabalha à noite..." />
-              </div>
-            </div>
-            <div className="chips" style={{ marginTop: 12 }}>
-              <button className={`chip ${lifestyle.hasChildren ? 'active' : ''}`} onClick={() => setLifestyle({ ...lifestyle, hasChildren: !lifestyle.hasChildren })}>Crianças em casa</button>
-              <button className={`chip ${lifestyle.hasElderly ? 'active' : ''}`} onClick={() => setLifestyle({ ...lifestyle, hasElderly: !lifestyle.hasElderly })}>Idosos</button>
-              <button className={`chip ${lifestyle.hasRespiratory ? 'active' : ''}`} onClick={() => setLifestyle({ ...lifestyle, hasRespiratory: !lifestyle.hasRespiratory })}>Condição respiratória/cardíaca</button>
-              <button className={`chip ${lifestyle.pets ? 'active' : ''}`} onClick={() => setLifestyle({ ...lifestyle, pets: !lifestyle.pets })}>Animais de estimação</button>
-            </div>
-          </section>
-
-          <section className="card">
-            <h2>Recomendações adaptadas e impacto direto</h2>
-            <p className="lead">Geradas a partir da qualidade do ar e do seu perfil, com explicação do efeito de cada escolha.</p>
-            {recs.map((r, idx) => (
-              <div key={idx} style={{ marginBottom: 14 }}>
-                <h3>{r.title}</h3>
-                <ul className="list">
-                  {r.actions.map((a, i) => <li key={i}>{a}</li>)}
-                </ul>
-                <div className="impact"><strong>Impacto direto:</strong> {r.impact}</div>
-              </div>
-            ))}
-            <hr className="sep" />
-            <h3>Resumo de impacto das suas escolhas</h3>
-            <ul className="list">
-              {impacts.map((im, i) => <li key={i}>{im}</li>)}
-            </ul>
-          </section>
+          <p className="small" style={{ margin: '8px 0 0' }}>{L('source')}: {air?.source || 'Open-Meteo'}</p>
         </div>
 
-        <div className="stack">
-          <section className="card chat">
-            <h2>Assistente GenAI (conversa)</h2>
-            <p className="lead">Pergunte sobre planos do dia, proteção em episódios de fumaça, rotinas de baixa emissão e ações comunitárias.</p>
+        <div className="side-card">
+          <h3>{L('location')}</h3>
+          <div className="row" style={{ marginBottom: 8 }}>
+            <input className="input" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={L('searchCity')} onKeyDown={(e) => e.key === 'Enter' && void search()} />
+          </div>
+          <div className="row" style={{ marginBottom: 8 }}>
+            <button className="btn small" onClick={() => void search()}>{L('search')}</button>
+            <button className="btn small secondary" onClick={useMyLocation}>{L('useMyLocation')}</button>
+          </div>
+          {results.length > 0 && (
+            <div className="chips" style={{ marginBottom: 8 }}>
+              {results.map((r, i) => <button key={i} className="chip" onClick={() => { setLocation(r); setResults([]); }}>{r.name}</button>)}
+            </div>
+          )}
+          <div className="row">
+            <button className="btn small secondary" onClick={() => location && void loadAir(location)} disabled={!location || airLoading}>{airLoading ? '...' : L('refresh')}</button>
+          </div>
+          {location && <p className="small" style={{ margin: '8px 0 0' }}>{L('selected')}: {location.name}</p>}
+          {airError && <div className="alert" style={{ marginTop: 8 }}>{airError}</div>}
+        </div>
+
+        <div className="side-card">
+          <h3>{L('profile')}</h3>
+          <div className="field"><label>{L('household')}</label><select value={lifestyle.household} onChange={(e)=>setLifestyle({...lifestyle, household:e.target.value})}>{householdOpts.map(o=> <option key={o}>{o}</option>)}</select></div>
+          <div className="field"><label>{L('heating')}</label><select value={lifestyle.heating} onChange={(e)=>setLifestyle({...lifestyle, heating:e.target.value})}>{heatingOpts.map(o=> <option key={o}>{o}</option>)}</select></div>
+          <div className="field"><label>{L('cooking')}</label><select value={lifestyle.cooking} onChange={(e)=>setLifestyle({...lifestyle, cooking:e.target.value})}>{cookingOpts.map(o=> <option key={o}>{o}</option>)}</select></div>
+          <div className="field"><label>{L('transport')}</label><select value={lifestyle.transport} onChange={(e)=>setLifestyle({...lifestyle, transport:e.target.value})}>{transportOpts.map(o=> <option key={o}>{o}</option>)}</select></div>
+          <div className="field"><label>{L('outdoor')}</label><select value={lifestyle.outdoorRoutine} onChange={(e)=>setLifestyle({...lifestyle, outdoorRoutine:e.target.value})}>{outdoorOpts.map(o=> <option key={o}>{o}</option>)}</select></div>
+          <div className="chips" style={{ margin: '4px 0 8px' }}>
+            <button className={`chip ${lifestyle.hasChildren?'active':''}`} onClick={()=>setLifestyle({...lifestyle, hasChildren:!lifestyle.hasChildren})}>{L('children')}</button>
+            <button className={`chip ${lifestyle.hasElderly?'active':''}`} onClick={()=>setLifestyle({...lifestyle, hasElderly:!lifestyle.hasElderly})}>{L('elderly')}</button>
+            <button className={`chip ${lifestyle.hasRespiratory?'active':''}`} onClick={()=>setLifestyle({...lifestyle, hasRespiratory:!lifestyle.hasRespiratory})}>{L('respiratory')}</button>
+            <button className={`chip ${lifestyle.pets?'active':''}`} onClick={()=>setLifestyle({...lifestyle, pets:!lifestyle.pets})}>{L('pets')}</button>
+          </div>
+          <div className="field" style={{ marginBottom: 0 }}><label>{L('notes')}</label><input value={lifestyle.notes} onChange={(e)=>setLifestyle({...lifestyle, notes:e.target.value})} placeholder={lang==='pt'?'Ex.: asma leve, trabalha à noite...':'e.g. mild asthma, night shifts...'} /></div>
+        </div>
+      </aside>
+
+      <main className="main">
+        <div className="topbar">
+          <div className="title">RespiraAI <span>· {L('tagline')}</span></div>
+          <div className="pill-row">
+            <div className="lang-toggle" aria-label={L('lang')}>
+              <button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button>
+              <button className={lang==='pt'?'active':''} onClick={()=>setLang('pt')}>PT</button>
+            </div>
+          </div>
+        </div>
+
+        <div className="content">
+          <section className="panel chat-panel">
+            <div className="panel-header">
+              <div>
+                <h2>{L('navChat')}</h2>
+                <p>{L('heroDesc')}</p>
+              </div>
+            </div>
             <div className="chat-log">
               {messages.map((m) => (
                 <div key={m.id} className={`msg ${m.role}`}>
-                  <div className="meta">{m.role === 'user' ? 'Você' : m.meta || 'RespiraAI'}</div>
-                  <div>{m.content}</div>
+                  <div className="avatar">{m.role === 'user' ? 'U' : 'AI'}</div>
+                  <div className="bubble">
+                    <div className="meta">{m.role === 'user' ? (lang==='pt'?'Você':'You') : (m.meta || 'RespiraAI')}</div>
+                    <div>{m.content}</div>
+                  </div>
                 </div>
               ))}
-              {chatLoading && <div className="msg assistant"><div className="meta">RespiraAI</div>Gerando resposta personalizada...</div>}
+              {chatLoading && (
+                <div className="msg assistant"><div className="avatar">AI</div><div className="bubble"><div className="meta">RespiraAI</div>{L('generating')}</div></div>
+              )}
             </div>
-            <div className="chips" style={{ marginTop: 10 }}>
-              <button className="chip" onClick={() => quickPrompt(planPrompt)}>Plano para hoje</button>
-              <button className="chip" onClick={() => quickPrompt('Como proteger o ar dentro de casa durante fumaça intensa no inverno? Explique o impacto de cada medida.')}>Ar interno no inverno</button>
-              <button className="chip" onClick={() => quickPrompt('Quais rotinas de baixa emissão posso adotar esta semana considerando meu perfil? Explique o impacto direto.')}>Rotinas de baixa emissão</button>
-              <button className="chip" onClick={() => quickPrompt('Sugira ações comunitárias para reduzir a poluição e proteger pessoas vulneráveis.')}>Ações comunitárias</button>
-            </div>
-            <div className="chat-input">
-              <textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Descreva sua situação ou faça uma pergunta..."
-                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void sendMessage(); } }}
-              />
-              <button className="btn" onClick={() => void sendMessage()} disabled={chatLoading || !input.trim()}>Enviar</button>
+            <div className="composer">
+              <div className="chips" style={{ marginBottom: 10 }}>
+                {quick.map(q => <button key={q.label} className="chip" onClick={() => void sendMessage(q.prompt)}>{q.label}</button>)}
+              </div>
+              <div className="composer-row">
+                <textarea value={input} onChange={(e)=>setInput(e.target.value)} placeholder={L('chatPlaceholder')} onKeyDown={(e)=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); void sendMessage(); } }} />
+                <button className="btn" onClick={() => void sendMessage()} disabled={chatLoading || !input.trim()}>{L('send')}</button>
+              </div>
             </div>
           </section>
 
-          <section className="card">
-            <h2>Configuração do motor GenAI</h2>
-            <p className="lead">Conecte um provedor compatível com OpenAI para respostas 100% geradas por LLM. Sem chave, o app usa um modo especialista local baseado no contexto e nos seus dados.</p>
-            <div className="form-grid">
-              <div className="field" style={{ gridColumn: '1 / -1' }}>
-                <label>Modo</label>
-                <select value={aiSettings.provider} onChange={(e) => setAiSettings({ ...aiSettings, provider: e.target.value as AiSettings['provider'] })}>
-                  <option value="openai-compatible">Provedor GenAI (API compatível com OpenAI)</option>
-                  <option value="local">Modo especialista local (sem API externa)</option>
-                </select>
-              </div>
-              <div className="field">
-                <label>Base URL</label>
-                <input value={aiSettings.baseUrl} onChange={(e) => setAiSettings({ ...aiSettings, baseUrl: e.target.value })} placeholder="https://api.openai.com/v1" />
-              </div>
-              <div className="field">
-                <label>Modelo</label>
-                <input value={aiSettings.model} onChange={(e) => setAiSettings({ ...aiSettings, model: e.target.value })} placeholder="gpt-4o-mini" />
-              </div>
-              <div className="field" style={{ gridColumn: '1 / -1' }}>
-                <label>Chave de API (armazenada localmente no navegador)</label>
-                <input type="password" value={aiSettings.apiKey} onChange={(e) => setAiSettings({ ...aiSettings, apiKey: e.target.value })} placeholder="sk-..." />
-              </div>
+          <section className="panel" style={{ minHeight: 0 }}>
+            <div className="panel-header">
+              <div><h2>{L('navDashboard')}</h2><p>{lang==='pt' ? 'Recomendações, impacto e configuração' : 'Recommendations, impact, and configuration'}</p></div>
             </div>
-            <div className="small" style={{ marginTop: 10 }}>
-              Dica: para usar modelos locais/remotos, aponte para um endpoint compatível (ex.: proxy próprio, OpenRouter, Azure OpenAI compatível, Ollama com gateway compatível). A chave nunca é enviada a este app além da chamada direta ao endpoint configurado.
+            <div className="tabs">
+              <button className={`tab ${tab==='recs'?'active':''}`} onClick={()=>setTab('recs')}>{L('recommendations')}</button>
+              <button className={`tab ${tab==='impact'?'active':''}`} onClick={()=>setTab('impact')}>{L('impact')}</button>
+              <button className={`tab ${tab==='settings'?'active':''}`} onClick={()=>setTab('settings')}>{L('navSettings')}</button>
             </div>
-            <hr className="sep" />
-            <details>
-              <summary>Ver contexto enviado ao assistente</summary>
-              <pre className="small" style={{ whiteSpace: 'pre-wrap', marginTop: 10 }}>{buildContext(location, air, lifestyle)}</pre>
-            </details>
-          </section>
-
-          <section className="card">
-            <h2>Como este assistente ajuda</h2>
-            <ul className="list">
-              <li><strong>Fumaça no inverno e poluição urbana:</strong> interpreta AQI/PM2.5 e adapta orientações ao nível de risco.</li>
-              <li><strong>Baixa emissão:</strong> propõe rotinas de transporte, energia e aquecimento/cozinha com menor impacto.</li>
-              <li><strong>Ar interno:</strong> recomenda vedação, ventilação estratégica, filtragem e redução de fontes internas.</li>
-              <li><strong>Impacto direto:</strong> cada recomendação explica efeito na exposição, saúde, emissões e comunidade.</li>
-            </ul>
-            <div className="alert" style={{ marginTop: 12 }}>
-              Aviso: informações educativas, não substituem orientação médica, alertas oficiais da defesa civil/agências ambientais ou planos clínicos individuais.
+            <div className="panel-body scroll-col" style={{ height: 'calc(100vh - 230px)' }}>
+              {tab === 'recs' && (
+                <div>
+                  {recs.map((r, idx) => (
+                    <div key={idx} className="rec">
+                      <h4>{r.title}</h4>
+                      <ul>{r.actions.map((a,i)=><li key={i}>{a}</li>)}</ul>
+                      <div className="impact-box"><strong>{L('directImpact')}:</strong> {r.impact}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {tab === 'impact' && (
+                <div>
+                  <h4 style={{ margin: '0 0 8px' }}>{L('impactSummary')}</h4>
+                  <ul className="list">{impacts.map((im,i)=><li key={i}>{im}</li>)}</ul>
+                  <div className="divider" />
+                  <h4 style={{ margin: '0 0 8px' }}>{L('howHelps')}</h4>
+                  <ul className="list">
+                    <li>{lang==='pt' ? 'Fumaça no inverno e poluição urbana: interpreta AQI/PM2.5 e adapta orientações ao risco.' : 'Winter smoke & urban pollution: interprets AQI/PM2.5 and adapts guidance to risk.'}</li>
+                    <li>{lang==='pt' ? 'Baixa emissão: rotinas de transporte, energia e aquecimento/cozinha com menor impacto.' : 'Low emissions: transport, energy, and heating/cooking routines with lower impact.'}</li>
+                    <li>{lang==='pt' ? 'Ar interno: vedação, ventilação estratégica, filtragem e redução de fontes internas.' : 'Indoor air: sealing, strategic ventilation, filtration, and reducing indoor sources.'}</li>
+                    <li>{lang==='pt' ? 'Impacto direto: cada recomendação explica efeito na exposição, saúde, emissões e comunidade.' : 'Direct impact: every recommendation explains effects on exposure, health, emissions, and community.'}</li>
+                  </ul>
+                  <div className="alert" style={{ marginTop: 12 }}>{L('disclaimer')}</div>
+                </div>
+              )}
+              {tab === 'settings' && (
+                <div>
+                  <p className="sub" style={{ marginTop: 0 }}>{L('aiConfigDesc')}</p>
+                  <div className="field"><label>{L('provider')}</label>
+                    <select value={aiSettings.provider} onChange={(e)=>setAiSettings({...aiSettings, provider:e.target.value as AiSettings['provider']})}>
+                      <option value="openai-compatible">{L('providerApi')}</option>
+                      <option value="local">{L('providerLocal')}</option>
+                    </select>
+                  </div>
+                  <div className="grid2">
+                    <div className="field"><label>{L('baseUrl')}</label><input value={aiSettings.baseUrl} onChange={(e)=>setAiSettings({...aiSettings, baseUrl:e.target.value})} placeholder="https://api.openai.com/v1" /></div>
+                    <div className="field"><label>{L('model')}</label><input value={aiSettings.model} onChange={(e)=>setAiSettings({...aiSettings, model:e.target.value})} placeholder="gpt-4o-mini" /></div>
+                  </div>
+                  <div className="field"><label>{L('apiKey')}</label><input type="password" value={aiSettings.apiKey} onChange={(e)=>setAiSettings({...aiSettings, apiKey:e.target.value})} placeholder="sk-..." /></div>
+                  <div className="divider" />
+                  <h4 style={{ margin: '0 0 8px' }}>{L('context')}</h4>
+                  <pre className="ctx">{buildContext(location, air, lifestyle, lang)}</pre>
+                  <div className="alert" style={{ marginTop: 12 }}>{L('disclaimer')}</div>
+                </div>
+              )}
             </div>
           </section>
         </div>
-      </div>
-
-      <div className="footer-note">RespiraAI — protótipo GenAI para resiliência familiar e comunitária frente à poluição do ar. Dados de qualidade do ar fornecidos por Open-Meteo quando disponíveis.</div>
+      </main>
     </div>
   );
 }
