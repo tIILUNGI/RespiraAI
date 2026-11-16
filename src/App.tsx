@@ -72,13 +72,13 @@ export default function App() {
   useEffect(() => { localStorage.setItem('respira.ai', JSON.stringify(aiSettings)); }, [aiSettings]);
   useEffect(() => { localStorage.setItem('respira.location', JSON.stringify(location)); }, [location]);
 
-  // refresh welcome when language changes and conversation is fresh
-  useEffect(() => {
+  function changeLang(next: Lang) {
+    setLang(next);
     setMessages((m) => {
-      if (m.length === 1 && m[0].role === 'assistant') return [{ ...m[0], content: t(lang, 'welcome') }];
+      if (m.length === 1 && m[0].role === 'assistant') return [{ ...m[0], content: t(next, 'welcome') }];
       return m;
     });
-  }, [lang]);
+  }
 
   useEffect(() => { if (location) void loadAir(location, lang); /* eslint-disable-next-line */ }, [location?.latitude, location?.longitude]);
 
@@ -134,13 +134,13 @@ export default function App() {
         <div className="landing-bg" aria-hidden="true" />
         <header className="landing-nav">
           <div className="brand">
-            <div className="logo" />
+            <div className="logo" aria-hidden="true" />
             <div className="brand-text"><h1>{L('appName')}</h1><p>{L('tagline')}</p></div>
           </div>
           <div className="pill-row">
             <div className="lang-toggle" aria-label={L('lang')}>
-              <button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button>
-              <button className={lang==='pt'?'active':''} onClick={()=>setLang('pt')}>PT</button>
+              <button type="button" className={lang==='en'?'active':''} aria-pressed={lang==='en'} onClick={()=>changeLang('en')}>EN</button>
+              <button type="button" className={lang==='pt'?'active':''} aria-pressed={lang==='pt'} onClick={()=>changeLang('pt')}>PT</button>
             </div>
           </div>
         </header>
@@ -230,19 +230,20 @@ export default function App() {
         <div className="side-card">
           <h3>{L('location')}</h3>
           <div className="row" style={{ marginBottom: 8 }}>
-            <input className="input" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={L('searchCity')} onKeyDown={(e) => e.key === 'Enter' && void search()} />
+            <label htmlFor="location-search" className="sr-only">{L('searchCity')}</label>
+            <input id="location-search" className="input" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={L('searchCity')} onKeyDown={(e) => e.key === 'Enter' && void search()} />
           </div>
           <div className="row" style={{ marginBottom: 8 }}>
-            <button className="btn small" onClick={() => void search()}>{L('search')}</button>
-            <button className="btn small secondary" onClick={useMyLocation}>{L('useMyLocation')}</button>
+            <button type="button" className="btn small" onClick={() => void search()}>{L('search')}</button>
+            <button type="button" className="btn small secondary" onClick={useMyLocation}>{L('useMyLocation')}</button>
           </div>
           {results.length > 0 && (
-            <div className="chips" style={{ marginBottom: 8 }}>
-              {results.map((r, i) => <button key={i} className="chip" onClick={() => { setLocation(r); setResults([]); }}>{r.name}</button>)}
+            <div className="chips" style={{ marginBottom: 8 }} role="group" aria-label={L('location')}>
+              {results.map((r, i) => <button key={i} type="button" className="chip" onClick={() => { setLocation(r); setResults([]); }}>{r.name}</button>)}
             </div>
           )}
           <div className="row">
-            <button className="btn small secondary" onClick={() => location && void loadAir(location)} disabled={!location || airLoading}>{airLoading ? '...' : L('refresh')}</button>
+            <button type="button" className="btn small secondary" onClick={() => location && void loadAir(location)} disabled={!location || airLoading}>{airLoading ? '...' : L('refresh')}</button>
           </div>
           {location && <p className="small" style={{ margin: '8px 0 0' }}>{L('selected')}: {location.name}</p>}
           {airError && <div className="alert" style={{ marginTop: 8 }}>{airError}</div>}
@@ -250,18 +251,18 @@ export default function App() {
 
         <div className="side-card">
           <h3>{L('profile')}</h3>
-          <div className="field"><label>{L('household')}</label><select value={lifestyle.household} onChange={(e)=>setLifestyle({...lifestyle, household:e.target.value})}>{householdOpts.map(o=> <option key={o}>{o}</option>)}</select></div>
-          <div className="field"><label>{L('heating')}</label><select value={lifestyle.heating} onChange={(e)=>setLifestyle({...lifestyle, heating:e.target.value})}>{heatingOpts.map(o=> <option key={o}>{o}</option>)}</select></div>
-          <div className="field"><label>{L('cooking')}</label><select value={lifestyle.cooking} onChange={(e)=>setLifestyle({...lifestyle, cooking:e.target.value})}>{cookingOpts.map(o=> <option key={o}>{o}</option>)}</select></div>
-          <div className="field"><label>{L('transport')}</label><select value={lifestyle.transport} onChange={(e)=>setLifestyle({...lifestyle, transport:e.target.value})}>{transportOpts.map(o=> <option key={o}>{o}</option>)}</select></div>
-          <div className="field"><label>{L('outdoor')}</label><select value={lifestyle.outdoorRoutine} onChange={(e)=>setLifestyle({...lifestyle, outdoorRoutine:e.target.value})}>{outdoorOpts.map(o=> <option key={o}>{o}</option>)}</select></div>
-          <div className="chips" style={{ margin: '4px 0 8px' }}>
-            <button className={`chip ${lifestyle.hasChildren?'active':''}`} onClick={()=>setLifestyle({...lifestyle, hasChildren:!lifestyle.hasChildren})}>{L('children')}</button>
-            <button className={`chip ${lifestyle.hasElderly?'active':''}`} onClick={()=>setLifestyle({...lifestyle, hasElderly:!lifestyle.hasElderly})}>{L('elderly')}</button>
-            <button className={`chip ${lifestyle.hasRespiratory?'active':''}`} onClick={()=>setLifestyle({...lifestyle, hasRespiratory:!lifestyle.hasRespiratory})}>{L('respiratory')}</button>
-            <button className={`chip ${lifestyle.pets?'active':''}`} onClick={()=>setLifestyle({...lifestyle, pets:!lifestyle.pets})}>{L('pets')}</button>
+          <div className="field"><label htmlFor="l-household">{L('household')}</label><select id="l-household" value={lifestyle.household} onChange={(e)=>setLifestyle({...lifestyle, household:e.target.value})}>{householdOpts.map(o=> <option key={o}>{o}</option>)}</select></div>
+          <div className="field"><label htmlFor="l-heating">{L('heating')}</label><select id="l-heating" value={lifestyle.heating} onChange={(e)=>setLifestyle({...lifestyle, heating:e.target.value})}>{heatingOpts.map(o=> <option key={o}>{o}</option>)}</select></div>
+          <div className="field"><label htmlFor="l-cooking">{L('cooking')}</label><select id="l-cooking" value={lifestyle.cooking} onChange={(e)=>setLifestyle({...lifestyle, cooking:e.target.value})}>{cookingOpts.map(o=> <option key={o}>{o}</option>)}</select></div>
+          <div className="field"><label htmlFor="l-transport">{L('transport')}</label><select id="l-transport" value={lifestyle.transport} onChange={(e)=>setLifestyle({...lifestyle, transport:e.target.value})}>{transportOpts.map(o=> <option key={o}>{o}</option>)}</select></div>
+          <div className="field"><label htmlFor="l-outdoor">{L('outdoor')}</label><select id="l-outdoor" value={lifestyle.outdoorRoutine} onChange={(e)=>setLifestyle({...lifestyle, outdoorRoutine:e.target.value})}>{outdoorOpts.map(o=> <option key={o}>{o}</option>)}</select></div>
+          <div className="chips" style={{ margin: '4px 0 8px' }} role="group" aria-label={L('profile')}>
+            <button type="button" className={`chip ${lifestyle.hasChildren?'active':''}`} aria-pressed={lifestyle.hasChildren} onClick={()=>setLifestyle({...lifestyle, hasChildren:!lifestyle.hasChildren})}>{L('children')}</button>
+            <button type="button" className={`chip ${lifestyle.hasElderly?'active':''}`} aria-pressed={lifestyle.hasElderly} onClick={()=>setLifestyle({...lifestyle, hasElderly:!lifestyle.hasElderly})}>{L('elderly')}</button>
+            <button type="button" className={`chip ${lifestyle.hasRespiratory?'active':''}`} aria-pressed={lifestyle.hasRespiratory} onClick={()=>setLifestyle({...lifestyle, hasRespiratory:!lifestyle.hasRespiratory})}>{L('respiratory')}</button>
+            <button type="button" className={`chip ${lifestyle.pets?'active':''}`} aria-pressed={lifestyle.pets} onClick={()=>setLifestyle({...lifestyle, pets:!lifestyle.pets})}>{L('pets')}</button>
           </div>
-          <div className="field" style={{ marginBottom: 0 }}><label>{L('notes')}</label><input value={lifestyle.notes} onChange={(e)=>setLifestyle({...lifestyle, notes:e.target.value})} placeholder={lang==='pt'?'Ex.: asma leve, trabalha à noite...':'e.g. mild asthma, night shifts...'} /></div>
+          <div className="field" style={{ marginBottom: 0 }}><label htmlFor="l-notes">{L('notes')}</label><input id="l-notes" value={lifestyle.notes} onChange={(e)=>setLifestyle({...lifestyle, notes:e.target.value})} placeholder={lang==='pt'?'Ex.: asma leve, trabalha à noite...':'e.g. mild asthma, night shifts...'} /></div>
         </div>
       </aside>
 
@@ -272,10 +273,10 @@ export default function App() {
             <div className="title">{L('appName')} <span>· {location ? location.name : L('tagline')}</span></div>
           </div>
           <div className="pill-row">
-            <button className="btn small secondary" onClick={() => setEntered(false)}>{lang === 'pt' ? 'Início' : 'Home'}</button>
+            <button type="button" className="btn small secondary" onClick={() => setEntered(false)}>{lang === 'pt' ? 'Início' : 'Home'}</button>
             <div className="lang-toggle" aria-label={L('lang')}>
-              <button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button>
-              <button className={lang==='pt'?'active':''} onClick={()=>setLang('pt')}>PT</button>
+              <button type="button" className={lang==='en'?'active':''} aria-pressed={lang==='en'} onClick={()=>changeLang('en')}>EN</button>
+              <button type="button" className={lang==='pt'?'active':''} aria-pressed={lang==='pt'} onClick={()=>changeLang('pt')}>PT</button>
             </div>
           </div>
         </header>

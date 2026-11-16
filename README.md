@@ -30,7 +30,7 @@ npm run preview
 ```
 
 ## Tests
-Automated unit/integration tests (Vitest) cover core logic: AQI categorization, recommendation and impact generation, AI context/fallback behavior, and i18n.
+Automated test suite (Vitest) with 8 files / 32 tests covering core logic: AQI categorization, geocoding/air API parsing (mocked), recommendation and impact generation (multiple scenarios), AI context and local expert fallback behavior, i18n keys/completeness, and integration flows.
 ```bash
 npm test
 ```
