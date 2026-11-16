@@ -29,6 +29,12 @@ npm run build
 npm run preview
 ```
 
+## Tests
+Automated unit/integration tests (Vitest) cover core logic: AQI categorization, recommendation and impact generation, AI context/fallback behavior, and i18n.
+```bash
+npm test
+```
+
 ## GenAI configuration
 In **AI Settings / Config. IA** provide:
 - **Base URL** (e.g. `https://api.openai.com/v1` or a compatible endpoint)
