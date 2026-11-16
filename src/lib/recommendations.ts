@@ -170,4 +170,4 @@ export function impactSummary(air: AirQuality | null, lifestyle: Lifestyle, lang
   if (/lenha|carv|lareira|wood|fireplace|coal/i.test(`${lifestyle.heating} ${lifestyle.cooking}`)) lines.push('Residential burning: a key source of winter particles; optimizing or reducing use has a direct impact on local smoke.');
   if (!lines.length) lines.push('Add your location and profile to estimate the direct impact of your choices.');
   return lines;
-}
+}

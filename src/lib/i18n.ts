@@ -173,4 +173,4 @@ export const strings = {
 
 export function t(lang: Lang, key: keyof typeof strings.en): string {
   return strings[lang][key] ?? strings.en[key];
-}
+}

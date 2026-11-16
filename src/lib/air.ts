@@ -16,7 +16,7 @@ export async function geocodeLocation(query: string, lang: 'en' | 'pt' = 'en'): 
   }));
 }
 
-export async function fetchAirQuality(lat: number, lon: number, _lang: 'en' | 'pt' = 'en'): Promise<AirQuality> {
+export async function fetchAirQuality(lat: number, lon: number, lang: 'en' | 'pt' = 'en'): Promise<AirQuality> {
   const params = new URLSearchParams({
     latitude: String(lat),
     longitude: String(lon),
@@ -25,7 +25,7 @@ export async function fetchAirQuality(lat: number, lon: number, _lang: 'en' | 'p
   });
   const url = `https://air-quality-api.open-meteo.com/v1/air-quality?${params.toString()}`;
   const res = await fetch(url);
-  if (!res.ok) throw new Error(_lang === 'pt' ? 'Falha ao obter qualidade do ar' : 'Failed to fetch air quality data');
+  if (!res.ok) throw new Error(lang === 'pt' ? 'Falha ao obter qualidade do ar' : 'Failed to fetch air quality data');
   const data = await res.json();
   const c = data.current || {};
   const pm25 = num(c.pm2_5);
@@ -33,7 +33,6 @@ export async function fetchAirQuality(lat: number, lon: number, _lang: 'en' | 'p
   const usAqi = num(c.us_aqi);
   const europeanAqi = num(c.european_aqi);
   const dust = num(c.dust);
-  // Heuristic smoke indicator: elevated fine particles relative to coarse/dust context
   let smokeIndicator: number | undefined;
   if (pm25 != null) {
     smokeIndicator = Math.min(500, Math.round(pm25 * (pm10 && pm10 > 0 ? Math.max(1, pm25 / Math.max(pm10 * 0.6, 1)) : 4)));
@@ -67,4 +66,4 @@ export function aqiCategory(usAqi?: number, lang: 'en' | 'pt' = 'en'): { label: 
   if (usAqi <= 200) return { label: lang === 'pt' ? 'Ruim' : 'Unhealthy', color: '#ff8c42', advice: lang === 'pt' ? 'Evite atividades intensas ao ar livre; prefira ambientes internos protegidos.' : 'Avoid intense outdoor activity; prefer protected indoor spaces.' };
   if (usAqi <= 300) return { label: lang === 'pt' ? 'Muito ruim' : 'Very unhealthy', color: '#ff6b6b', advice: lang === 'pt' ? 'Fique em local fechado com ar filtrado quando possível; use máscara bem ajustada se precisar sair.' : 'Stay indoors with filtered air when possible; wear a well-fitted mask if you must go out.' };
   return { label: lang === 'pt' ? 'Perigosa' : 'Hazardous', color: '#b5179e', advice: lang === 'pt' ? 'Condições de emergência: minimize toda exposição, proteja grupos vulneráveis e siga alertas locais.' : 'Emergency conditions: minimize all exposure, protect vulnerable people, and follow local alerts.' };
-}
+}

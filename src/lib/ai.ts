@@ -93,9 +93,9 @@ Include health cautions when AQI/PM2.5 is elevated and encourage medical care fo
       const content = data?.choices?.[0]?.message?.content;
       if (typeof content === 'string' && content.trim()) return content.trim();
       throw new Error(lang === 'pt' ? 'Resposta vazia do provedor de IA.' : 'Empty response from AI provider.');
-    } catch (_err: any) {
+    } catch (_err: unknown) {
       const prefix = lang === 'pt'
-        ? `**Modo de orientação inteligente ativado**\nNão consegui conectar ao serviço de IA no momento, mas tudo bem: vou te ajudar com orientações personalizadas com base na qualidade do ar e no seu perfil. (Se quiser usar um provedor GenAI, confira a chave e as configurações em "Config. IA".)\n\n`
+        ? `**Modo de orientação inteligente ativado**\nNão consegui conectar ao serviço de IA no momento, mas tudo bem — vou te ajudar com orientações personalizadas com base na qualidade do ar e no seu perfil. (Se quiser usar um provedor GenAI, confira a chave e as configurações em "Config. IA".)\n\n`
         : `**Smart guidance mode is on**\nI couldn't connect to the AI service right now, but no worries — I'll help with personalized guidance based on your air quality and profile. (If you'd like full GenAI replies, you can check your key and settings in "AI Settings".)\n\n`;
       return localExpertReply(messages, location, air, lifestyle, lang, prefix);
     }
@@ -167,4 +167,4 @@ function pickFocus(text: string): string[] {
   if (/comunidade|vizin|bairro|escola|coletiv|community|neighbor|neighbour/i.test(text)) f.push('comunidade');
   if (/saúde|crian|idos|asma|respir|máscara|sintoma|health|child|elder|asthma|mask|symptom/i.test(text)) f.push('saude');
   return f.length ? f : ['rotina', 'casa', 'sustentavel'];
-}
+}

@@ -66,7 +66,7 @@ export default function App() {
   const [input, setInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
 
-  useEffect(() => { localStorage.setItem('respira.lang', JSON.stringify(lang)); }, [lang]);
+  useEffect(() => { localStorage.setItem('respira.lang', JSON.stringify(lang)); document.documentElement.lang = lang; }, [lang]);
   useEffect(() => { localStorage.setItem('respira.entered', JSON.stringify(entered)); }, [entered]);
   useEffect(() => { localStorage.setItem('respira.lifestyle', JSON.stringify(lifestyle)); }, [lifestyle]);
   useEffect(() => { localStorage.setItem('respira.ai', JSON.stringify(aiSettings)); }, [aiSettings]);
@@ -130,7 +130,8 @@ export default function App() {
     const steps = [L('step1'), L('step2'), L('step3')];
     return (
       <div className="landing">
-        <div className="landing-bg" />
+        <a href="#landing-main" className="skip-link">Skip to content</a>
+        <div className="landing-bg" aria-hidden="true" />
         <header className="landing-nav">
           <div className="brand">
             <div className="logo" />
@@ -143,7 +144,7 @@ export default function App() {
             </div>
           </div>
         </header>
-        <main className="landing-main">
+        <main id="landing-main" className="landing-main">
           <section className="landing-hero">
             <div className="landing-badge">{L('landingBadge')}</div>
             <h1 className="landing-title">{L('landingTitle')}</h1>
@@ -156,7 +157,7 @@ export default function App() {
           <section className="landing-features">
             {features.map((f, i) => (
               <div key={i} className="feature-card">
-                <div className="feature-icon">{f.icon}</div>
+                <div className="feature-icon" aria-hidden="true">{f.icon}</div>
                 <h3>{f.title}</h3>
                 <p>{f.desc}</p>
               </div>
@@ -167,8 +168,8 @@ export default function App() {
             <div className="steps">
               {steps.map((s, i) => (
                 <div key={i} className="step-card">
-                  <div className="step-num">{i + 1}</div>
-                  <p>{s}</p>
+                  <div className="step-num" aria-hidden="true">{i + 1}</div>
+                  <p><span className="sr-only">{lang === 'pt' ? `Passo ${i + 1}: ` : `Step ${i + 1}: `}</span>{s}</p>
                 </div>
               ))}
             </div>
@@ -197,7 +198,8 @@ export default function App() {
 
   return (
     <div className="shell">
-      <aside className="sidebar">
+      <a href="#main-content" className="skip-link">Skip to content</a>
+      <aside className="sidebar" aria-label={lang === 'pt' ? 'Contexto e configurações' : 'Context and settings'}>
         <div className="brand">
           <div className="logo" />
           <div className="brand-text">
@@ -263,8 +265,8 @@ export default function App() {
         </div>
       </aside>
 
-      <main className="main">
-        <div className="topbar">
+      <main id="main-content" className="main">
+        <header className="topbar">
           <div className="topbar-left">
             <div className="status-dot" style={{ background: cat.color, boxShadow: `0 0 0 4px ${cat.color}22, 0 0 12px ${cat.color}66` }} />
             <div className="title">{L('appName')} <span>· {location ? location.name : L('tagline')}</span></div>
@@ -276,7 +278,7 @@ export default function App() {
               <button className={lang==='pt'?'active':''} onClick={()=>setLang('pt')}>PT</button>
             </div>
           </div>
-        </div>
+        </header>
 
         <div className="content">
           <section className="panel chat-panel">
@@ -286,7 +288,7 @@ export default function App() {
                 <p>{L('heroDesc')}</p>
               </div>
             </div>
-            <div className="chat-log">
+            <div className="chat-log" role="log" aria-live="polite" aria-relevant="additions" aria-label={lang === 'pt' ? 'Conversa com o assistente' : 'Assistant conversation'}>
               {messages.map((m) => (
                 <div key={m.id} className={`msg ${m.role}`}>
                   <div className="avatar">{m.role === 'user' ? (lang==='pt' ? 'VC' : 'You') : 'AI'}</div>
@@ -301,12 +303,13 @@ export default function App() {
               )}
             </div>
             <div className="composer">
-              <div className="quick-row">
-                {quick.map(q => <button key={q.label} className="quick-chip" onClick={() => void sendMessage(q.prompt)}>{q.label}</button>)}
+              <div className="quick-row" role="group" aria-label={lang === 'pt' ? 'Ações rápidas' : 'Quick actions'}>
+                {quick.map(q => <button key={q.label} type="button" className="quick-chip" onClick={() => void sendMessage(q.prompt)}>{q.label}</button>)}
               </div>
               <div className="composer-row">
-                <textarea value={input} onChange={(e)=>setInput(e.target.value)} placeholder={L('chatPlaceholder')} onKeyDown={(e)=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); void sendMessage(); } }} />
-                <button className="btn" onClick={() => void sendMessage()} disabled={chatLoading || !input.trim()}>{L('send')}</button>
+                <label htmlFor="chat-input" className="sr-only">{L('chatPlaceholder')}</label>
+                <textarea id="chat-input" value={input} onChange={(e)=>setInput(e.target.value)} placeholder={L('chatPlaceholder')} onKeyDown={(e)=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); void sendMessage(); } }} />
+                <button type="button" className="btn" onClick={() => void sendMessage()} disabled={chatLoading || !input.trim()}>{L('send')}</button>
               </div>
             </div>
           </section>
@@ -315,14 +318,14 @@ export default function App() {
             <div className="panel-header">
               <div><h2>{L('navDashboard')}</h2><p>{lang==='pt' ? 'Recomendações, impacto e configuração' : 'Recommendations, impact, and configuration'}</p></div>
             </div>
-            <div className="tabs">
-              <button className={`tab ${tab==='recs'?'active':''}`} onClick={()=>setTab('recs')}>{L('recommendations')}</button>
-              <button className={`tab ${tab==='impact'?'active':''}`} onClick={()=>setTab('impact')}>{L('impact')}</button>
-              <button className={`tab ${tab==='settings'?'active':''}`} onClick={()=>setTab('settings')}>{L('navSettings')}</button>
+            <div className="tabs" role="tablist" aria-label={L('navDashboard')}>
+              <button type="button" role="tab" id="tab-recs" aria-controls="panel-recs" aria-selected={tab==='recs'} className={`tab ${tab==='recs'?'active':''}`} onClick={()=>setTab('recs')}>{L('recommendations')}</button>
+              <button type="button" role="tab" id="tab-impact" aria-controls="panel-impact" aria-selected={tab==='impact'} className={`tab ${tab==='impact'?'active':''}`} onClick={()=>setTab('impact')}>{L('impact')}</button>
+              <button type="button" role="tab" id="tab-settings" aria-controls="panel-settings" aria-selected={tab==='settings'} className={`tab ${tab==='settings'?'active':''}`} onClick={()=>setTab('settings')}>{L('navSettings')}</button>
             </div>
             <div className="panel-body scroll-col" style={{ height: 'calc(100vh - 230px)' }}>
               {tab === 'recs' && (
-                <div>
+                <div id="panel-recs" role="tabpanel" aria-labelledby="tab-recs">
                   {recs.map((r, idx) => (
                     <div key={idx} className="rec">
                       <h4>{r.title}</h4>
@@ -333,7 +336,7 @@ export default function App() {
                 </div>
               )}
               {tab === 'impact' && (
-                <div>
+                <div id="panel-impact" role="tabpanel" aria-labelledby="tab-impact">
                   <h4 style={{ margin: '0 0 8px' }}>{L('impactSummary')}</h4>
                   <ul className="list">{impacts.map((im,i)=><li key={i}>{im}</li>)}</ul>
                   <div className="divider" />
@@ -348,22 +351,22 @@ export default function App() {
                 </div>
               )}
               {tab === 'settings' && (
-                <div>
+                <div id="panel-settings" role="tabpanel" aria-labelledby="tab-settings">
                   <p className="sub" style={{ marginTop: 0 }}>{L('aiConfigDesc')}</p>
-                  <div className="field"><label>{L('provider')}</label>
-                    <select value={aiSettings.provider} onChange={(e)=>setAiSettings({...aiSettings, provider:e.target.value as AiSettings['provider']})}>
+                  <div className="field"><label htmlFor="ai-provider">{L('provider')}</label>
+                    <select id="ai-provider" value={aiSettings.provider} onChange={(e)=>setAiSettings({...aiSettings, provider:e.target.value as AiSettings['provider']})}>
                       <option value="openai-compatible">{L('providerApi')}</option>
                       <option value="local">{L('providerLocal')}</option>
                     </select>
                   </div>
                   <div className="grid2">
-                    <div className="field"><label>{L('baseUrl')}</label><input value={aiSettings.baseUrl} onChange={(e)=>setAiSettings({...aiSettings, baseUrl:e.target.value})} placeholder="https://api.openai.com/v1" /></div>
-                    <div className="field"><label>{L('model')}</label><input value={aiSettings.model} onChange={(e)=>setAiSettings({...aiSettings, model:e.target.value})} placeholder="gpt-4o-mini" /></div>
+                    <div className="field"><label htmlFor="ai-baseurl">{L('baseUrl')}</label><input id="ai-baseurl" value={aiSettings.baseUrl} onChange={(e)=>setAiSettings({...aiSettings, baseUrl:e.target.value})} placeholder="https://api.openai.com/v1" /></div>
+                    <div className="field"><label htmlFor="ai-model">{L('model')}</label><input id="ai-model" value={aiSettings.model} onChange={(e)=>setAiSettings({...aiSettings, model:e.target.value})} placeholder="gpt-4o-mini" /></div>
                   </div>
-                  <div className="field"><label>{L('apiKey')}</label><input type="password" value={aiSettings.apiKey} onChange={(e)=>setAiSettings({...aiSettings, apiKey:e.target.value})} placeholder="sk-..." /></div>
+                  <div className="field"><label htmlFor="ai-key">{L('apiKey')}</label><input id="ai-key" type="password" value={aiSettings.apiKey} onChange={(e)=>setAiSettings({...aiSettings, apiKey:e.target.value})} placeholder="sk-..." autoComplete="off" /></div>
                   <div className="divider" />
                   <h4 style={{ margin: '0 0 8px' }}>{L('context')}</h4>
-                  <pre className="ctx">{buildContext(location, air, lifestyle, lang)}</pre>
+                  <pre className="ctx" aria-label={L('context')}>{buildContext(location, air, lifestyle, lang)}</pre>
                   <div className="alert" style={{ marginTop: 12 }}>{L('disclaimer')}</div>
                 </div>
               )}
