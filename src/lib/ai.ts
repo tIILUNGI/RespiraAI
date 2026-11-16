@@ -24,7 +24,7 @@ export function buildContext(
     return [
       `Localização: ${location ? `${location.name} (${location.latitude.toFixed(3)}, ${location.longitude.toFixed(3)})` : 'não informada'}`,
       `Qualidade do ar: AQI=${air?.usAqi ?? 'n/d'}, categoria=${cat.label}, PM2.5=${air?.pm25 ?? 'n/d'} µg/m³, PM10=${air?.pm10 ?? 'n/d'} µg/m³, fonte=${air?.source ?? 'n/d'}, hora=${air?.time ?? 'n/d'}`,
-      `Perfil: agregado=${lifestyle.household}, crianças=${lifestyle.hasChildren}, idosos=${lifestyle.hasElderly}, respiratório=${lifestyle.hasRespiratory}, aquecimento=${lifestyle.heating}, cocção=${lifestyle.cooking}, transporte=${lifestyle.transport}, rotina externa=${lifestyle.outdoorRoutine}, pets=${lifestyle.pets}, notas=${lifestyle.notes || '—'}`,
+      `Perfil: agregado=${lifestyle.household}, crianças=${lifestyle.hasChildren}, idosos=${lifestyle.hasElderly}, condição respiratória=${lifestyle.hasRespiratory}, aquecimento=${lifestyle.heating}, cocção=${lifestyle.cooking}, transporte=${lifestyle.transport}, rotina externa=${lifestyle.outdoorRoutine}, pets=${lifestyle.pets}, notas=${lifestyle.notes || '—'}`,
       `Impactos: ${impacts.join(' | ')}`,
       `Recomendações-chave: ${recs.map((r) => `${r.title}: ${r.actions.slice(0, 2).join('; ')} [Impacto: ${r.impact}]`).join(' || ')}`,
     ].join('\n');
@@ -32,7 +32,7 @@ export function buildContext(
   return [
     `Location: ${location ? `${location.name} (${location.latitude.toFixed(3)}, ${location.longitude.toFixed(3)})` : 'not provided'}`,
     `Air quality: AQI=${air?.usAqi ?? 'n/a'}, category=${cat.label}, PM2.5=${air?.pm25 ?? 'n/a'} µg/m³, PM10=${air?.pm10 ?? 'n/a'} µg/m³, source=${air?.source ?? 'n/a'}, time=${air?.time ?? 'n/a'}`,
-    `Profile: household=${lifestyle.household}, children=${lifestyle.hasChildren}, elderly=${lifestyle.hasElderly}, respiratory=${lifestyle.hasRespiratory}, heating=${lifestyle.heating}, cooking=${lifestyle.cooking}, transport=${lifestyle.transport}, outdoor=${lifestyle.outdoorRoutine}, pets=${lifestyle.pets}, notes=${lifestyle.notes || '—'}`,
+    `Profile: household=${lifestyle.household}, children=${lifestyle.hasChildren}, elderly=${lifestyle.hasElderly}, respiratory/heart condition=${lifestyle.hasRespiratory}, heating=${lifestyle.heating}, cooking=${lifestyle.cooking}, transport=${lifestyle.transport}, outdoor routine=${lifestyle.outdoorRoutine}, pets=${lifestyle.pets}, notes=${lifestyle.notes || '—'}`,
     `Impacts: ${impacts.join(' | ')}`,
     `Key recommendations: ${recs.map((r) => `${r.title}: ${r.actions.slice(0, 2).join('; ')} [Impact: ${r.impact}]`).join(' || ')}`,
   ].join('\n');
@@ -93,7 +93,7 @@ Include health cautions when AQI/PM2.5 is elevated and encourage medical care fo
       const data = await res.json();
       const content = data?.choices?.[0]?.message?.content;
       if (typeof content === 'string' && content.trim()) return content.trim();
-      throw new Error('Empty response from AI provider.');
+      throw new Error(lang === 'pt' ? 'Resposta vazia do provedor de IA.' : 'Empty response from AI provider.');
     } catch (err: any) {
       const prefix = lang === 'pt'
         ? `Não consegui acessar o provedor GenAI configurado (${err?.message || 'erro desconhecido'}). Ativei o modo especialista local com base nos seus dados:\n\n`

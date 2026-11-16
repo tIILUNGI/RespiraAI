@@ -22,6 +22,34 @@ const defaultLifestyle: Lifestyle = {
 const uid = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
 function loadJson<T>(key: string, fallback: T): T { try { const r = localStorage.getItem(key); return r ? JSON.parse(r) as T : fallback; } catch { return fallback; } }
 
+function renderInline(text: string) {
+  const parts: any[] = [];
+  const re = /(\*\*[^*]+\*\*|_[^_]+_)/g;
+  let last = 0; let m: RegExpExecArray | null; let k = 0;
+  while ((m = re.exec(text))) {
+    if (m.index > last) parts.push(text.slice(last, m.index));
+    const token = m[0];
+    if (token.startsWith('**')) parts.push(<strong key={k++}>{token.slice(2, -2)}</strong>);
+    else parts.push(<em key={k++}>{token.slice(1, -1)}</em>);
+    last = m.index + token.length;
+  }
+  if (last < text.length) parts.push(text.slice(last));
+  return parts.length ? parts : text;
+}
+
+function renderRich(content: string) {
+  const blocks = content.replace(/\r\n/g, '\n').split(/\n\n+/);
+  return blocks.map((block, bi) => {
+    const lines = block.split('\n').filter(l => l.trim() !== '');
+    const isList = lines.length > 0 && lines.every(l => /^\s*[-*]\s+/.test(l));
+    if (isList) {
+      return <ul key={bi}>{lines.map((l, li) => <li key={li}>{renderInline(l.replace(/^\s*[-*]\s+/, ''))}</li>)}</ul>;
+    }
+    // handle mixed paragraphs with single-line breaks
+    return <p key={bi}>{lines.map((l, li) => <span key={li}>{li > 0 && <br />}{renderInline(l)}</span>)}</p>;
+  });
+}
+
 export default function App() {
   const [lang, setLang] = useState<Lang>(() => loadJson('respira.lang', 'en'));
   const [tab, setTab] = useState<'recs' | 'impact' | 'settings'>('recs');
@@ -106,8 +134,8 @@ export default function App() {
     <div className="shell">
       <aside className="sidebar">
         <div className="brand">
-          <div className="brand-mark" />
-          <div>
+          <div className="logo" />
+          <div className="brand-text">
             <h1>{L('appName')}</h1>
             <p>{L('tagline')}</p>
           </div>
@@ -116,7 +144,9 @@ export default function App() {
         <div className="side-card">
           <h3>{L('airQuality')}</h3>
           <div className="aqi-hero">
-            <div className="aqi-num" style={{ color: cat.color }}>{air?.usAqi != null ? Math.round(air.usAqi) : '—'}</div>
+            <div className="aqi-ring" style={{ borderColor: cat.color + '55' }}>
+              <div className="aqi-num" style={{ color: cat.color }}>{air?.usAqi != null ? Math.round(air.usAqi) : '—'}</div>
+            </div>
             <div className="aqi-meta">
               <div className="label" style={{ color: cat.color }}>{cat.label}</div>
               <div className="advice">{cat.advice}</div>
@@ -170,7 +200,10 @@ export default function App() {
 
       <main className="main">
         <div className="topbar">
-          <div className="title">RespiraAI <span>· {L('tagline')}</span></div>
+          <div className="topbar-left">
+            <div className="status-dot" style={{ background: cat.color, boxShadow: `0 0 0 4px ${cat.color}22, 0 0 12px ${cat.color}66` }} />
+            <div className="title">{L('appName')} <span>· {location ? location.name : L('tagline')}</span></div>
+          </div>
           <div className="pill-row">
             <div className="lang-toggle" aria-label={L('lang')}>
               <button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button>
@@ -190,20 +223,20 @@ export default function App() {
             <div className="chat-log">
               {messages.map((m) => (
                 <div key={m.id} className={`msg ${m.role}`}>
-                  <div className="avatar">{m.role === 'user' ? 'U' : 'AI'}</div>
+                  <div className="avatar">{m.role === 'user' ? (lang==='pt' ? 'VC' : 'You') : 'AI'}</div>
                   <div className="bubble">
                     <div className="meta">{m.role === 'user' ? (lang==='pt'?'Você':'You') : (m.meta || 'RespiraAI')}</div>
-                    <div>{m.content}</div>
+                    <div className="rich">{renderRich(m.content)}</div>
                   </div>
                 </div>
               ))}
               {chatLoading && (
-                <div className="msg assistant"><div className="avatar">AI</div><div className="bubble"><div className="meta">RespiraAI</div>{L('generating')}</div></div>
+                <div className="msg assistant"><div className="avatar">AI</div><div className="bubble"><div className="meta">RespiraAI</div><div className="rich">{L('generating')}</div></div></div>
               )}
             </div>
             <div className="composer">
-              <div className="chips" style={{ marginBottom: 10 }}>
-                {quick.map(q => <button key={q.label} className="chip" onClick={() => void sendMessage(q.prompt)}>{q.label}</button>)}
+              <div className="quick-row">
+                {quick.map(q => <button key={q.label} className="quick-chip" onClick={() => void sendMessage(q.prompt)}>{q.label}</button>)}
               </div>
               <div className="composer-row">
                 <textarea value={input} onChange={(e)=>setInput(e.target.value)} placeholder={L('chatPlaceholder')} onKeyDown={(e)=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); void sendMessage(); } }} />

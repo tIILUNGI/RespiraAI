@@ -20,26 +20,26 @@ export function buildRecommendations(air: AirQuality | null, lifestyle: Lifestyl
         /carro|moto|car|motor/i.test(lifestyle.transport)
           ? 'Combine recados em uma única viagem, pratique direção suave e mantenha pneus calibrados para reduzir emissões e consumo.'
           : 'Mantenha transporte coletivo, caminhada ou bicicleta quando o ar estiver adequado; em picos, escolha rotas mais protegidas.',
-        /alta|exerc|high|sport|work/i.test(lifestyle.outdoorRoutine)
+        /alta|exerc|high|sport|work|outdoor/i.test(lifestyle.outdoorRoutine)
           ? 'Troque treinos intensos ao ar livre por opções internas em dias de AQI elevado.'
           : 'Se precisar sair, faça pausas em ambientes fechados e evite vias com tráfego pesado.',
         'Verifique a qualidade do ar antes de abrir janelas e antes de atividades de crianças, idosos ou pessoas sensíveis.',
       ],
-      impact: 'Impacto direto: reduzir esforço ao ar livre em picos diminui a dose inalada de PM2.5 no mesmo dia; menos viagens e direção eficiente cortam emissões locais (NOx/PM) e CO₂, melhorando o ar do entorno e reduzindo custos.',
+      impact: 'Impacto direto: reduzir esforço ao ar livre em picos diminui a dose inalada de PM2.5 no mesmo dia; menos viagens e direção eficiente cortam emissões locais (NOx/PM) e CO2, melhorando o ar do entorno e reduzindo custos.',
     });
     recs.push({
       category: 'casa',
       title: 'Qualidade do ar interno (fumaça e poluição urbana)',
       actions: [
         smoky || severe
-          ? 'Feche portas e janelas durante picos; vede frestas e crie um “quarto limpo” com menor entrada de ar externo.'
+          ? 'Feche portas e janelas durante picos; vede frestas e crie um "quarto limpo" com menor entrada de ar externo.'
           : 'Ventile nos períodos de melhor qualidade do ar para renovar o ambiente sem trazer poluição.',
         'Use exaustor na cozinha, evite frituras e queima desnecessária; reduza fontes internas de partículas e gases.',
         'Evite fumar, queimar incenso/velas e usar aerossóis fortes em ambientes fechados.',
         'Se tiver purificador HEPA, use no cômodo mais ocupado; mantenha filtros limpos e portas fechadas para maior eficiência.',
         'Limpe poeira com pano úmido e aspire com filtro adequado para não ressuspender partículas.',
       ],
-      impact: `Impacto direto: vedação e filtragem reduzem a infiltração de partículas externas; controlar fontes internas evita somar poluição. Em condições ${cat.label.toLowerCase()}, isso pode aliviar sintomas e proteger ${sensitive ? 'crianças, idosos ou pessoas sensíveis' : 'toda a família'}.`,
+      impact: `Impacto direto: vedação e filtragem reduzem a infiltração de partículas externas; controlar fontes internas evita somar poluição. Em condição ${cat.label.toLowerCase()}, isso pode aliviar sintomas e proteger ${sensitive ? 'crianças, idosos ou pessoas sensíveis' : 'toda a família'}.`,
     });
     recs.push({
       category: 'sustentavel',
@@ -52,7 +52,7 @@ export function buildRecommendations(air: AirQuality | null, lifestyle: Lifestyl
         'Prefira mobilidade compartilhada, deslocamentos combinados e teletrabalho/estudo remoto em dias de alerta quando possível.',
         'Evite queima de resíduos e apoie práticas comunitárias de menor emissão.',
       ],
-      impact: 'Impacto direto: cada redução de queima e consumo energético diminui partículas e CO₂; ganhos locais (menos fumaça doméstica e tráfego) somam-se na vizinhança e reduzem picos de poluição.',
+      impact: 'Impacto direto: cada redução de queima e consumo energético diminui partículas e CO2; ganhos locais (menos fumaça doméstica e tráfego) somam-se na vizinhança e reduzem picos de poluição.',
     });
     recs.push({
       category: 'comunidade',
@@ -97,14 +97,14 @@ export function buildRecommendations(air: AirQuality | null, lifestyle: Lifestyl
         : 'If you must be outside, take breaks indoors and avoid busy roads.',
       'Check air quality before opening windows and before activities for children, older adults, or sensitive people.',
     ],
-    impact: 'Direct impact: reducing exertion during peaks lowers the same-day dose of inhaled PM2.5; fewer car trips and efficient driving cut local NOx/PM and CO₂, improving neighborhood air and saving fuel.',
+    impact: 'Direct impact: reducing exertion during peaks lowers the same-day dose of inhaled PM2.5; fewer car trips and efficient driving cut local NOx/PM and CO2, improving neighborhood air and saving fuel.',
   });
   recs.push({
     category: 'casa',
     title: 'Indoor air quality (smoke & urban pollution)',
     actions: [
       smoky || severe
-        ? 'Keep windows/doors closed during peaks, seal gaps, and set up a “clean room” with minimal outdoor air infiltration.'
+        ? 'Keep windows/doors closed during peaks, seal gaps, and set up a "clean room" with minimal outdoor air infiltration.'
         : 'Ventilate during cleaner periods to refresh indoor air without pulling in pollution.',
       'Use kitchen exhaust, avoid unnecessary burning/frying, and reduce indoor particle and gas sources.',
       'Avoid smoking, incense/candles, and strong aerosols indoors.',
@@ -124,7 +124,7 @@ export function buildRecommendations(air: AirQuality | null, lifestyle: Lifestyl
       'Prefer shared mobility, trip bundling, and remote work/study on alert days when possible.',
       'Avoid burning waste and support community low-emission practices.',
     ],
-    impact: 'Direct impact: every reduction in burning and energy use lowers particle and CO₂ emissions; local gains (less domestic smoke and traffic) add up across the neighborhood and reduce pollution peaks.',
+    impact: 'Direct impact: every reduction in burning and energy use lowers particle and CO2 emissions; local gains (less domestic smoke and traffic) add up across the neighborhood and reduce pollution peaks.',
   });
   recs.push({
     category: 'comunidade',
