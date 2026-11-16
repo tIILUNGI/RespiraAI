@@ -179,7 +179,7 @@ pre.ctx { margin: 0; white-space: pre-wrap; font-size: .76rem; color: #bfd4ea; b
   .content, .topbar { padding-left: 12px; padding-right: 12px; }
   .sidebar { padding: 12px 10px; }
 }/* Landing page */
-.landing { min-height: 100vh; position: relative; overflow-x: hidden; }
+.landing { height: 100vh; position: relative; overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 .landing-bg {
   position: fixed; inset: 0; z-index: 0; pointer-events: none;
   background:
