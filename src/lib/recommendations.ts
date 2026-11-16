@@ -25,7 +25,7 @@ export function buildRecommendations(air: AirQuality | null, lifestyle: Lifestyl
           : 'Se precisar sair, faça pausas em ambientes fechados e evite vias com tráfego pesado.',
         'Verifique a qualidade do ar antes de abrir janelas e antes de atividades de crianças, idosos ou pessoas sensíveis.',
       ],
-      impact: 'Impacto direto: reduzir esforço ao ar livre em picos diminui a dose inalada de PM2.5 no mesmo dia; menos viagens e direção eficiente cortam emissões locais (NOx/PM) e CO2, melhorando o ar do entorno e reduzindo custos.',
+      impact: 'Reduzir esforço ao ar livre em picos diminui a dose inalada de PM2.5 no mesmo dia; menos viagens e direção eficiente cortam emissões locais (NOx/PM) e CO2, melhorando o ar do entorno e reduzindo custos.',
     });
     recs.push({
       category: 'casa',
@@ -39,7 +39,7 @@ export function buildRecommendations(air: AirQuality | null, lifestyle: Lifestyl
         'Se tiver purificador HEPA, use no cômodo mais ocupado; mantenha filtros limpos e portas fechadas para maior eficiência.',
         'Limpe poeira com pano úmido e aspire com filtro adequado para não ressuspender partículas.',
       ],
-      impact: `Impacto direto: vedação e filtragem reduzem a infiltração de partículas externas; controlar fontes internas evita somar poluição. Em condição ${cat.label.toLowerCase()}, isso pode aliviar sintomas e proteger ${sensitive ? 'crianças, idosos ou pessoas sensíveis' : 'toda a família'}.`,
+      impact: `Vedação e filtragem reduzem a infiltração de partículas externas; controlar fontes internas evita somar poluição. Em condições de ar ${cat.label.toLowerCase()}, isso pode aliviar sintomas e proteger ${sensitive ? 'crianças, idosos ou pessoas sensíveis' : 'toda a família'}.`,
     });
     recs.push({
       category: 'sustentavel',
@@ -52,7 +52,7 @@ export function buildRecommendations(air: AirQuality | null, lifestyle: Lifestyl
         'Prefira mobilidade compartilhada, deslocamentos combinados e teletrabalho/estudo remoto em dias de alerta quando possível.',
         'Evite queima de resíduos e apoie práticas comunitárias de menor emissão.',
       ],
-      impact: 'Impacto direto: cada redução de queima e consumo energético diminui partículas e CO2; ganhos locais (menos fumaça doméstica e tráfego) somam-se na vizinhança e reduzem picos de poluição.',
+      impact: 'Cada redução de queima e consumo energético diminui partículas e CO2; ganhos locais (menos fumaça doméstica e tráfego) somam-se na vizinhança e reduzem picos de poluição.',
     });
     recs.push({
       category: 'comunidade',
@@ -63,7 +63,7 @@ export function buildRecommendations(air: AirQuality | null, lifestyle: Lifestyl
         'Apoie medidas para reduzir poeira em obras e queimadas de resíduos no bairro.',
         'Identifique locais com melhor filtragem de ar para proteção coletiva em dias severos.',
       ],
-      impact: 'Impacto direto: coordenação reduz exposições evitáveis e emissões simultâneas; ações coletivas melhoram a qualidade do ar local ao longo do tempo.',
+      impact: 'Coordenação reduz exposições evitáveis e emissões simultâneas; ações coletivas melhoram a qualidade do ar local ao longo do tempo.',
     });
     if (sensitive) {
       recs.push({
@@ -75,7 +75,7 @@ export function buildRecommendations(air: AirQuality | null, lifestyle: Lifestyl
           'Reduza esforço físico de crianças e idosos em dias ruins e mantenha hidratação.',
           'Procure atendimento se houver falta de ar, dor no peito, tontura ou piora rápida.',
         ],
-        impact: 'Impacto direto: reduzir dose de exposição e usar proteção adequada diminui risco de crises respiratórias/cardiovasculares; resposta rápida evita agravamentos.',
+        impact: 'Reduzir dose de exposição e usar proteção adequada diminui risco de crises respiratórias/cardiovasculares; resposta rápida evita agravamentos.',
       });
     }
     return recs;
@@ -97,7 +97,7 @@ export function buildRecommendations(air: AirQuality | null, lifestyle: Lifestyl
         : 'If you must be outside, take breaks indoors and avoid busy roads.',
       'Check air quality before opening windows and before activities for children, older adults, or sensitive people.',
     ],
-    impact: 'Direct impact: reducing exertion during peaks lowers the same-day dose of inhaled PM2.5; fewer car trips and efficient driving cut local NOx/PM and CO2, improving neighborhood air and saving fuel.',
+    impact: 'Reducing exertion during peaks lowers the same-day dose of inhaled PM2.5; fewer car trips and efficient driving cut local NOx/PM and CO2, improving neighborhood air and saving fuel.',
   });
   recs.push({
     category: 'casa',
@@ -111,7 +111,7 @@ export function buildRecommendations(air: AirQuality | null, lifestyle: Lifestyl
       'Run a HEPA purifier in the most-used room if available; keep filters maintained and doors closed for better performance.',
       'Clean dust with a damp cloth and vacuum with a suitable filter to avoid resuspending particles.',
     ],
-    impact: `Direct impact: sealing and filtration reduce infiltration of outdoor particles; controlling indoor sources prevents added pollution. In ${cat.label.toLowerCase()} conditions this can ease symptoms and better protect ${sensitive ? 'children, older adults, or sensitive people' : 'your household'}.`,
+    impact: `Sealing and filtration reduce infiltration of outdoor particles; controlling indoor sources prevents added pollution. In ${cat.label.toLowerCase()} air conditions this can ease symptoms and better protect ${sensitive ? 'children, older adults, or sensitive people' : 'your household'}.`,
   });
   recs.push({
     category: 'sustentavel',
@@ -124,7 +124,7 @@ export function buildRecommendations(air: AirQuality | null, lifestyle: Lifestyl
       'Prefer shared mobility, trip bundling, and remote work/study on alert days when possible.',
       'Avoid burning waste and support community low-emission practices.',
     ],
-    impact: 'Direct impact: every reduction in burning and energy use lowers particle and CO2 emissions; local gains (less domestic smoke and traffic) add up across the neighborhood and reduce pollution peaks.',
+    impact: 'Every reduction in burning and energy use lowers particle and CO2 emissions; local gains (less domestic smoke and traffic) add up across the neighborhood and reduce pollution peaks.',
   });
   recs.push({
     category: 'comunidade',
@@ -135,7 +135,7 @@ export function buildRecommendations(air: AirQuality | null, lifestyle: Lifestyl
       'Support measures to reduce construction dust and waste burning locally.',
       'Identify places with better air filtration for collective protection on severe days.',
     ],
-    impact: 'Direct impact: coordination reduces avoidable exposures and simultaneous emissions; collective action improves local air quality over time.',
+    impact: 'Coordination reduces avoidable exposures and simultaneous emissions; collective action improves local air quality over time.',
   });
   if (sensitive) {
     recs.push({
@@ -147,7 +147,7 @@ export function buildRecommendations(air: AirQuality | null, lifestyle: Lifestyl
         'Limit physical exertion for children and older adults on poor-air days and maintain hydration.',
         'Seek medical care for shortness of breath, chest pain, dizziness, or rapid worsening of symptoms.',
       ],
-      impact: 'Direct impact: lowering exposure dose and using proper protection reduces risk of respiratory/cardiovascular flare-ups; rapid response prevents complications.',
+      impact: 'Lowering exposure dose and using proper protection reduces risk of respiratory/cardiovascular flare-ups; rapid response prevents complications.',
     });
   }
   return recs;
