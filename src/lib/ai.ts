@@ -87,17 +87,16 @@ Include health cautions when AQI/PM2.5 is elevated and encourage medical care fo
         body: JSON.stringify(payload),
       });
       if (!res.ok) {
-        const text = await res.text().catch(() => '');
-        throw new Error(`API error (${res.status}): ${text.slice(0, 200)}`);
+        throw new Error(`provider_unavailable_${res.status}`);
       }
       const data = await res.json();
       const content = data?.choices?.[0]?.message?.content;
       if (typeof content === 'string' && content.trim()) return content.trim();
       throw new Error(lang === 'pt' ? 'Resposta vazia do provedor de IA.' : 'Empty response from AI provider.');
-    } catch (err: any) {
+    } catch (_err: any) {
       const prefix = lang === 'pt'
-        ? `Não consegui acessar o provedor GenAI configurado (${err?.message || 'erro desconhecido'}). Ativei o modo especialista local com base nos seus dados:\n\n`
-        : `I couldn't reach the configured GenAI provider (${err?.message || 'unknown error'}). Switched to local expert mode using your data:\n\n`;
+        ? `**Modo de orientação inteligente ativado**\nNão consegui conectar ao serviço de IA no momento, mas tudo bem: vou te ajudar com orientações personalizadas com base na qualidade do ar e no seu perfil. (Se quiser usar um provedor GenAI, confira a chave e as configurações em "Config. IA".)\n\n`
+        : `**Smart guidance mode is on**\nI couldn't connect to the AI service right now, but no worries — I'll help with personalized guidance based on your air quality and profile. (If you'd like full GenAI replies, you can check your key and settings in "AI Settings".)\n\n`;
       return localExpertReply(messages, location, air, lifestyle, lang, prefix);
     }
   }
